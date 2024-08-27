@@ -1,0 +1,4 @@
+{
+    "appService.defaultWebAppToDeploy": "/subscriptions/3b135e6b-483d-40d0-9132-94cf1188cb0e/resourceGroups/appsvc_linux_centralus/providers/Microsoft.Web/sites/emotionReco",
+    "appService.deploySubpath": "backend"
+}
