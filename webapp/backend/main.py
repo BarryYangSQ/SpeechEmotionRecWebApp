@@ -3,14 +3,13 @@ from flask_cors import CORS
 import os
 import json
 import torch
-import shutil
 from modelscope.pipelines import pipeline
 from modelscope.utils.constant import Tasks
 
 app = Flask(__name__)
 CORS(app)
 
-# Configure upload folder and results folder
+# Configure the upload folder and the result folder
 UPLOAD_FOLDER = './uploads'
 RESULTS_FOLDER = './results'
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
@@ -21,7 +20,7 @@ if not os.path.exists(UPLOAD_FOLDER):
 if not os.path.exists(RESULTS_FOLDER):
     os.makedirs(RESULTS_FOLDER)
 
-# Initialize models
+# Model initialization
 vad_model, utils = torch.hub.load(repo_or_dir='snakers4/silero-vad', model='silero_vad', trust_repo=True)
 (get_speech_ts, save_audio, read_audio, VADIterator, collect_chunks) = utils
 
@@ -45,17 +44,17 @@ def extract_segment(audio, start_time, end_time, sample_rate):
 def process_audio_file(audio_file):
     results = []
 
-    # Perform emotion recognition on the entire audio file
+    # Emotional recognition of the entire audio file
     overall_emotion_result = emotion_pipeline(audio_file, granularity="utterance", extract_embedding=False)
     best_overall_label_index = overall_emotion_result[0]['scores'].index(max(overall_emotion_result[0]['scores']))
     best_overall_emotion = overall_emotion_result[0]['labels'][best_overall_label_index]
 
-    # Add the overall emotion result as the first entry in the JSON result
+    # Adds the overall mood result to the first line of the JSON result
     results.append({
         "Overall Emotion": best_overall_emotion
     })
 
-    # Perform VAD segmentation and recognition on each segment
+    # The audio is segmented by VAD and identified segment by segment
     audio = read_audio(audio_file)
     vad_segments = get_speech_ts(audio, vad_model)
 
@@ -101,14 +100,15 @@ def process_audio_file(audio_file):
     with open(result_file_path, 'w', encoding='utf-8') as f:
         json.dump(results, f, ensure_ascii=False, indent=4)
 
-    # Remove sub-audio files from the results folder
+    # Delete the subaudio files in the results folder after processing is complete
     for file in os.listdir(RESULTS_FOLDER):
         if file.endswith('.wav') and file != 'output_results.json':
             os.remove(os.path.join(RESULTS_FOLDER, file))
 
+
 @app.route('/upload', methods=['POST'])
 def upload_file():
-    # Clear the upload folder
+    # Empty the upload folder
     for file in os.listdir(UPLOAD_FOLDER):
         file_path = os.path.join(UPLOAD_FOLDER, file)
         if os.path.isfile(file_path):
